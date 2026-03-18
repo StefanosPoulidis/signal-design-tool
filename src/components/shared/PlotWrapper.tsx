@@ -1,4 +1,4 @@
-import Plotly from 'plotly.js-basic-dist-min';
+import Plotly from 'plotly.js-dist-min';
 import createPlotlyComponent from 'react-plotly.js/factory';
 
 // Handle CJS default export interop
