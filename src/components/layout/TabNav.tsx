@@ -12,9 +12,6 @@ const TABS: Tab[] = [
   { id: 'ide', label: 'IDE Channels', shortLabel: 'IDE' },
   { id: 'scoreline', label: 'Multi-Level Design', shortLabel: 'Levels' },
   { id: 'archetypes', label: 'Operator Types', shortLabel: 'Types' },
-  { id: 'game', label: 'Decision Game', shortLabel: 'Game' },
-  { id: 'deployment', label: 'Deployment Guide', shortLabel: 'Deploy' },
-  { id: 'governance', label: 'Governance', shortLabel: 'Gov.' },
 ];
 
 interface TabNavProps {
@@ -24,13 +21,14 @@ interface TabNavProps {
 
 export function TabNav({ active, onSelect }: TabNavProps) {
   return (
-    <nav className="bg-white border-b border-gray-200 overflow-x-auto">
+    <nav className="bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex gap-0 min-w-max">
+        <div className="flex gap-0">
           {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => onSelect(tab.id)}
+              aria-current={active === tab.id ? 'page' : undefined}
               className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 active === tab.id
                   ? 'border-primary-600 text-primary-600'

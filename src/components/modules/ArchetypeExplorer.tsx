@@ -1,6 +1,9 @@
 import { useState, useMemo } from 'react';
 import Plot from '../shared/PlotWrapper';
+import { InterpretationBox } from '../shared/InterpretationBox';
 import { ARCHETYPES, complianceDecayCurve, actionDistribution } from '../../lib/archetypes';
+
+const MAX_SIGNALS = 100;
 
 export function ArchetypeExplorer() {
   const [selectedIdx, setSelectedIdx] = useState<number[]>([0]);
@@ -19,7 +22,7 @@ export function ArchetypeExplorer() {
   const decayCurves = useMemo(
     () => selectedIdx.map(i => ({
       archetype: ARCHETYPES[i],
-      curve: complianceDecayCurve(ARCHETYPES[i], 80),
+      curve: complianceDecayCurve(ARCHETYPES[i], MAX_SIGNALS),
     })),
     [selectedIdx]
   );
@@ -33,9 +36,8 @@ export function ArchetypeExplorer() {
     [selectedIdx]
   );
 
-  // Radar chart data
   const radarCategories = ['q_base', 'phi', 'sigma_mu', 'alpha_att'];
-  const radarLabels = ['Baseline Quality', 'Compliance', 'Noise', 'Attn. Reduction'];
+  const radarLabels = ['Baseline Quality', 'Compliance', 'Noise Temp.', 'Attn. Reduction'];
   const RADAR_COLORS = ['#3b82f6', '#ef4444', '#22c55e'];
 
   return (
@@ -44,8 +46,13 @@ export function ArchetypeExplorer() {
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
           Operator Archetypes
         </h2>
-        <p className="text-gray-600">
-          Explore 7 operator types from the paper. Select up to 3 to compare.
+        <p className="text-gray-600 mb-3">
+          The paper identifies 7 behavioral profiles that capture how different operators
+          respond to AI signals. Each archetype is defined by 5 parameters that determine
+          compliance, independent judgment quality, noise, and fatigue.
+        </p>
+        <p className="text-xs text-gray-500">
+          <strong>Select up to 3 archetypes</strong> to compare side by side. Click a card to select/deselect.
         </p>
       </div>
 
@@ -71,6 +78,9 @@ export function ArchetypeExplorer() {
         {/* Parameter table */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h3 className="font-semibold text-gray-900 mb-3">Parameters</h3>
+          <p className="text-xs text-gray-500 mb-3">
+            Behavioral parameters from Table 3 of the paper.
+          </p>
 
           <table className="w-full text-sm">
             <thead>
@@ -85,20 +95,20 @@ export function ArchetypeExplorer() {
             </thead>
             <tbody>
               {[
-                { key: 'q_base', label: 'q_base', desc: 'Baseline quality' },
-                { key: 'phi', label: 'φ', desc: 'Compliance' },
-                { key: 'sigma_mu', label: 'σ_μ', desc: 'Noise temp.' },
-                { key: 'alpha_att', label: 'α_att', desc: 'Attn. reduction' },
-                { key: 'rho', label: 'ρ', desc: 'Fatigue rate' },
-              ].map(({ key, label, desc }) => (
+                { key: 'q_base', label: 'q', desc: 'Baseline quality', tip: 'P(correct) without AI' },
+                { key: 'phi', label: 'φ', desc: 'Compliance', tip: 'P(follows AI)' },
+                { key: 'sigma_mu', label: 'σ_μ', desc: 'Noise temp.', tip: 'Higher = noisier decisions' },
+                { key: 'alpha_att', label: 'α_att', desc: 'Attn. reduction', tip: 'Signal improves attention' },
+                { key: 'rho', label: 'ρ', desc: 'Fatigue rate', tip: 'Compliance decay rate' },
+              ].map(({ key, label, desc, tip }) => (
                 <tr key={key} className="border-b border-gray-100">
-                  <td className="py-2">
+                  <td className="py-2" title={tip}>
                     <span className="font-mono text-primary-600">{label}</span>
                     <span className="text-xs text-gray-400 ml-1">({desc})</span>
                   </td>
                   {selectedIdx.map(si => (
                     <td key={si} className="text-right font-mono py-2">
-                      {(ARCHETYPES[si] as never as Record<string, number>)[key]}
+                      {ARCHETYPES[si][key]}
                     </td>
                   ))}
                 </tr>
@@ -106,19 +116,27 @@ export function ArchetypeExplorer() {
             </tbody>
           </table>
 
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <div className="text-xs text-gray-500 mb-1">About <strong>{primary.name}</strong>:</div>
+            <p className="text-xs text-gray-700">{primary.description}</p>
+          </div>
+
           {primary.rho > 0 && (
-            <p className="mt-3 text-xs text-amber-700 bg-amber-50 rounded p-2">
-              This archetype exhibits alert fatigue (ρ = {primary.rho}).
-              Compliance decays exponentially with cumulative signals.
-            </p>
+            <InterpretationBox variant="warning" title="Alert Fatigue">
+              This archetype has ρ = {primary.rho}, meaning compliance decays
+              exponentially: φ_eff = φ · exp(-ρ · N). After ~{Math.round(1 / primary.rho)} signals,
+              compliance drops to 37% of initial.
+            </InterpretationBox>
           )}
         </div>
 
-        {/* Compliance decay curves */}
+        {/* Compliance decay + action distribution */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="font-semibold text-gray-900 mb-3">
-            Effective Compliance Over Time
-          </h3>
+          <h3 className="font-semibold text-gray-900 mb-3">Compliance Over Time</h3>
+          <p className="text-xs text-gray-500 mb-2">
+            How effective compliance changes as cumulative signals increase.
+            Flat = no fatigue; declining = alert fatigue (ρ {'>'} 0).
+          </p>
 
           <Plot
             data={decayCurves.map(({ archetype, curve }, i) => ({
@@ -131,43 +149,37 @@ export function ArchetypeExplorer() {
             }))}
             layout={{
               xaxis: { title: 'Cumulative signals (N)' },
-              yaxis: { title: 'φ_eff', range: [0, 1] },
+              yaxis: { title: 'Effective compliance (φ_eff)', range: [0, 1] },
               margin: { l: 50, r: 20, t: 10, b: 45 },
-              height: 300,
+              height: 280,
               legend: { x: 0.5, y: 1, font: { size: 10 } },
             }}
             config={{ responsive: true, displayModeBar: false }}
             style={{ width: '100%' }}
           />
 
-          {/* Action distribution comparison */}
           <h4 className="font-medium text-gray-700 mt-4 mb-2 text-sm">
-            Action Distribution (initial)
+            Action Distribution (N = 0)
           </h4>
+          <p className="text-xs text-gray-500 mb-2">
+            P(correct action) with vs. without signal. The gap = action shift from signaling.
+          </p>
           <div className="space-y-2">
             {actionDist.map((ad, i) => (
               <div key={ad.name} className="text-xs">
-                <div className="font-medium mb-1" style={{ color: RADAR_COLORS[i] }}>
-                  {ad.name}
-                </div>
+                <div className="font-medium mb-1" style={{ color: RADAR_COLORS[i] }}>{ad.name}</div>
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <div className="text-gray-500 mb-0.5">Signal</div>
+                    <div className="text-gray-500 mb-0.5">With signal</div>
                     <div className="h-4 bg-gray-100 rounded overflow-hidden flex">
-                      <div
-                        className="bg-green-500 h-full"
-                        style={{ width: `${ad.signal.pGood * 100}%` }}
-                      />
+                      <div className="bg-green-500 h-full" style={{ width: `${ad.signal.pGood * 100}%` }} />
                     </div>
                     <div className="font-mono mt-0.5">P(a*) = {ad.signal.pGood.toFixed(2)}</div>
                   </div>
                   <div className="flex-1">
-                    <div className="text-gray-500 mb-0.5">Silence</div>
+                    <div className="text-gray-500 mb-0.5">Without signal</div>
                     <div className="h-4 bg-gray-100 rounded overflow-hidden flex">
-                      <div
-                        className="bg-blue-500 h-full"
-                        style={{ width: `${ad.silence.pGood * 100}%` }}
-                      />
+                      <div className="bg-blue-500 h-full" style={{ width: `${ad.silence.pGood * 100}%` }} />
                     </div>
                     <div className="font-mono mt-0.5">P(a*) = {ad.silence.pGood.toFixed(2)}</div>
                   </div>
@@ -179,14 +191,15 @@ export function ArchetypeExplorer() {
 
         {/* Radar chart */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h3 className="font-semibold text-gray-900 mb-3">
-            Parameter Comparison
-          </h3>
+          <h3 className="font-semibold text-gray-900 mb-3">Parameter Comparison</h3>
+          <p className="text-xs text-gray-500 mb-2">
+            All axes 0–1. Larger area = more capable operator.
+          </p>
 
           <Plot
             data={selectedIdx.map((si, i) => ({
               type: 'scatterpolar' as const,
-              r: radarCategories.map(k => (ARCHETYPES[si] as never as Record<string, number>)[k]),
+              r: radarCategories.map(k => ARCHETYPES[si][k] as number),
               theta: radarLabels,
               fill: 'toself' as const,
               name: ARCHETYPES[si].name,
@@ -199,12 +212,21 @@ export function ArchetypeExplorer() {
               },
               margin: { l: 40, r: 40, t: 30, b: 30 },
               height: 350,
-              legend: { x: 0, y: -0.2, font: { size: 10 } },
+              legend: { x: 0, y: -0.15, font: { size: 10 } },
               showlegend: true,
             }}
             config={{ responsive: true, displayModeBar: false }}
             style={{ width: '100%' }}
           />
+
+          <InterpretationBox variant="info" title="What the parameters mean">
+            <ul className="space-y-1 mt-1">
+              <li><strong>q (Baseline quality):</strong> how good decisions are without AI</li>
+              <li><strong>φ (Compliance):</strong> how often the operator follows AI advice</li>
+              <li><strong>σ_μ (Noise):</strong> randomness in decision-making</li>
+              <li><strong>α_att (Attention):</strong> how much the signal improves focus</li>
+            </ul>
+          </InterpretationBox>
         </div>
       </div>
     </div>

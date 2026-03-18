@@ -25,6 +25,7 @@ export interface IDEChannels {
 export interface IDEParams {
   phi: number;         // compliance
   beta_d: number;      // drift intensity
+  q_base: number;      // baseline decision quality (without AI)
   r_signal: number;    // reward under signal action
   r_nosignal: number;  // reward under no-signal action
   deltaV: number;      // value gap
@@ -41,41 +42,12 @@ export interface ArchetypeParams {
   name: string;
   q_base: number;    // baseline decision quality
   phi: number;       // action-signal compliance
-  sigma_mu: number;  // softmax temperature
+  sigma_mu: number;  // sigmoid temperature (binary choice noise)
   alpha_att: number; // attention noise reduction
   rho: number;       // fatigue decay rate
   description: string;
   mechanism: string;
+  [key: string]: string | number; // index signature for dynamic access
 }
 
-export interface GameState {
-  health: number;       // 0-3 (poor, fair, good, very good)
-  efficacy: 'H' | 'L';
-  round: number;
-  maxRounds: number;
-  score: number;
-  optimalScore: number;
-  history: GameRound[];
-  status: 'playing' | 'finished';
-}
-
-export interface GameRound {
-  health: number;
-  efficacy: 'H' | 'L';
-  userChoice: 'signal' | 'silence';
-  optimalChoice: 'signal' | 'silence';
-  reward: number;
-  optimalReward: number;
-  newHealth: number;
-  newEfficacy: 'H' | 'L';
-  ide: IDEChannels;
-}
-
-export interface DeploymentNodeResult {
-  passed: boolean;
-  value: number;
-  threshold: number;
-  recommendation: string;
-}
-
-export type ModuleId = 'landing' | 'simulator' | 'ide' | 'scoreline' | 'archetypes' | 'game' | 'deployment' | 'governance';
+export type ModuleId = 'landing' | 'simulator' | 'ide' | 'scoreline' | 'archetypes';

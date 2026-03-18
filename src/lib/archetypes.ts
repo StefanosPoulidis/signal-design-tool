@@ -83,8 +83,8 @@ export function effectiveCompliance(phi: number, rho: number, nCum: number): num
 
 /**
  * Compute action distribution mu(a_good | s, l)
- * Under signal: mu = phi_eff * 1 + (1 - phi_eff) * softmax(q/sigma)
- * Under silence: mu = softmax(q/sigma)  (no signal influence)
+ * Under signal: μ = φ_eff + (1 - φ_eff) · sigmoid(q_base / σ_μ)
+ * Under silence: μ = sigmoid(q_base / σ_μ)   [logistic sigmoid for binary choice]
  */
 export function actionDistribution(
   archetype: ArchetypeParams,

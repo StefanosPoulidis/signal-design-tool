@@ -8,9 +8,6 @@ import { SignalSimulator } from './components/modules/SignalSimulator';
 import { IDEDecomposition } from './components/modules/IDEDecomposition';
 import { ScoreLineGeometry } from './components/modules/ScoreLineGeometry';
 import { ArchetypeExplorer } from './components/modules/ArchetypeExplorer';
-import { DecisionGame } from './components/modules/DecisionGame';
-import { DeploymentTree } from './components/modules/DeploymentTree';
-import { GovernanceFrontier } from './components/modules/GovernanceFrontier';
 import type { ModuleId } from './lib/types';
 
 function App() {
@@ -28,12 +25,6 @@ function App() {
         return <ScoreLineGeometry />;
       case 'archetypes':
         return <ArchetypeExplorer />;
-      case 'game':
-        return <DecisionGame />;
-      case 'deployment':
-        return <DeploymentTree />;
-      case 'governance':
-        return <GovernanceFrontier />;
       default:
         return <LandingPage onNavigate={(id) => setActiveModule(id as ModuleId)} />;
     }

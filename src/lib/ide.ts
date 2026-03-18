@@ -1,51 +1,45 @@
 import type { IDEChannels, IDEParams } from './types';
 
 /**
- * Compute the IDE channel decomposition.
+ * Compute the IDE channel decomposition (Proposition 1 of the paper).
  *
- * The model: binary signal l in {0,1}, binary action a in {a_good, a_bad}
+ * Model: binary signal ℓ ∈ {0,1}, binary action a ∈ {a_good, a_bad}
  *
- * Under signal l=1 (recommend):
- *   mu(a_good | x, 1) = phi (compliance)
- *   mu(a_bad  | x, 1) = 1 - phi
+ * Under signal ℓ=1 (recommend):
+ *   μ(a_good | x, 1) = φ  (compliance rate)
+ *   μ(a_bad  | x, 1) = 1 - φ
  *
- * Under signal l=0 (silence):
- *   mu(a_good | x, 0) = q_base (own judgment quality)
- *   mu(a_bad  | x, 0) = 1 - q_base
+ * Under silence ℓ=0:
+ *   μ(a_good | x, 0) = q_base  (operator's own judgment quality)
+ *   μ(a_bad  | x, 0) = 1 - q_base
  *
- * R(s, a_good) = r_signal, R(s, a_bad) = r_nosignal
+ * Channel definitions:
+ *   I = Σ_a Δμ(a) · R(s,a)              — Immediate quality gain
+ *   D = Σ_a Δμ(a) · w(s,c,a,0)          — Displacement of continuation value
+ *   E = [K̄(H|H,s,1) - K̄(H|H,s,0)] · ΔV̄ — Efficacy drift cost
  *
- * Efficacy kernel under action-independent F:
- *   K_bar(H|H,s,1) - K_bar(H|H,s,0) = -beta_d (drift)
+ * where Δμ(a) = μ(a|x,1) - μ(a|x,0) is the action shift from signaling.
  */
 export function computeIDE(params: IDEParams): IDEChannels {
-  const { phi, beta_d, r_signal, r_nosignal, deltaV, kappa_0 } = params;
+  const { phi, beta_d, q_base, r_signal, r_nosignal, deltaV, kappa_0 } = params;
 
-  // For this simplified model, we use a baseline quality q_base
-  // derived implicitly: under silence, the operator uses own judgment
-  const q_base = 0.5; // default baseline; in full model this comes from archetype
-
-  // Delta_mu = mu(a|x,1) - mu(a|x,0)
+  // Action shift from signaling: Δμ = φ - q_base
   const delta_mu_good = phi - q_base;
   const delta_mu_bad = -delta_mu_good;
 
-  // I = sum_a Delta_mu_a * R(s,a)
+  // I = Immediate quality gain = Σ_a Δμ(a) · R(s,a)
   const I = delta_mu_good * r_signal + delta_mu_bad * r_nosignal;
 
-  // w_t(s,c,a,0) = continuation value under silence for action a
-  // Under action-independent F, this simplifies to:
-  // w(a) ≈ kappa_0 * deltaV for a_good, (kappa_0 - small) * deltaV for a_bad
+  // D = Displacement effect on continuation value
+  // Under action-independent efficacy kernel F (Corollary 1):
+  //   w(a_good) = w(a_bad) = κ₀ · ΔV → D = 0
+  // This is the paper's key simplification.
   const w_good = kappa_0 * deltaV;
-  const w_bad = (kappa_0 * 0.8) * deltaV; // slightly lower continuation for bad action
-
-  // D = sum_a Delta_mu_a * w_t(s,c,a,0)
+  const w_bad = kappa_0 * deltaV;
   const D = delta_mu_good * w_good + delta_mu_bad * w_bad;
 
-  // E = efficacy drift channel
-  // Under the direct K-bar computation:
-  // E = [K_bar(H|H,s,1) - K_bar(H|H,s,0)] * Delta_V_bar
-  // K_bar(H|H,s,0) - K_bar(H|H,s,1) >= beta_d
-  // So E <= -beta_d * deltaV (negative = harmful)
+  // E = Efficacy drift channel = -β_d · ΔV
+  // Always ≤ 0 when β_d > 0 (signaling degrades future efficacy)
   const E = -beta_d * deltaV;
 
   return {
@@ -57,7 +51,8 @@ export function computeIDE(params: IDEParams): IDEChannels {
 }
 
 /**
- * Compute IDE for a range of drift values to show how channels shift
+ * Compute IDE for a range of drift values to show the crossover point
+ * where |E| > I + D, making signaling harmful.
  */
 export function computeIDESweep(
   baseParams: IDEParams,

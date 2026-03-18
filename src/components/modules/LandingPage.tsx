@@ -63,6 +63,25 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         </p>
       </div>
 
+      {/* How to use this tool */}
+      <div className="bg-gray-50 rounded-xl border border-gray-200 p-6 md:p-8 mb-8">
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">
+          How to Use This Tool
+        </h2>
+        <p className="text-gray-700 leading-relaxed text-sm mb-3">
+          This interactive platform lets you explore the paper's framework hands-on.
+          Each module below corresponds to a key result. Adjust parameters with the
+          sliders, observe how the math changes in real time, and build intuition
+          for when AI advice helps vs. hurts.
+        </p>
+        <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
+          <li><strong>Start with "Should You Signal?"</strong> to check if your scenario falls in the safe or harmful region.</li>
+          <li><strong>Use "IDE Channels"</strong> to understand <em>why</em> signaling helps or hurts by decomposing the effect into three channels.</li>
+          <li><strong>Explore "Multi-Level Design"</strong> to see how choosing between different signal intensities changes the optimal policy.</li>
+          <li><strong>Compare "Operator Types"</strong> to see how the same signal affects different kinds of human operators.</li>
+        </ol>
+      </div>
+
       {/* Interactive Modules Grid */}
       <h2 className="text-xl font-semibold text-gray-900 mb-4">
         Explore the Framework
@@ -72,51 +91,26 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           {
             id: 'simulator',
             title: 'Should You Signal?',
-            desc: 'Input your scenario parameters and check if AI advice helps or hurts.',
+            desc: 'The core diagnostic: input your scenario parameters and instantly see whether AI advice helps or hurts over time. Tests both the sharp and observable prevalence conditions from the paper.',
             color: 'bg-blue-50 border-blue-200 hover:border-blue-400',
-            icon: '⚙️',
           },
           {
             id: 'ide',
             title: 'IDE Channel Decomposition',
-            desc: 'See how a signal\'s value breaks down into Immediate, Displacement, and Efficacy channels.',
+            desc: 'Decompose any signal\'s value into its three fundamental channels: Immediate quality gain (I), action Displacement (D), and Efficacy drift (E). See exactly which channel dominates.',
             color: 'bg-green-50 border-green-200 hover:border-green-400',
-            icon: '\u{1F4CA}',
           },
           {
             id: 'scoreline',
             title: 'Multi-Level Signal Design',
-            desc: 'Explore the score-line geometry for ordered signal menus with 2-5 intensity levels.',
+            desc: 'Design an ordered menu of signal intensities (from silence to full recommendation) and visualize the score-line geometry that determines which level is optimal at each shadow price.',
             color: 'bg-purple-50 border-purple-200 hover:border-purple-400',
-            icon: '\u{1F4C8}',
           },
           {
             id: 'archetypes',
             title: 'Operator Archetypes',
-            desc: 'Compare 7 operator types: from Over-reliant to Skeptical.',
+            desc: 'Compare 7 operator behavioral profiles from the paper: Over-reliant, Alert-fatigued, Forward-looking, Compliant, Capacity-limited, Noisy, and Skeptical. See how each responds differently to signals.',
             color: 'bg-amber-50 border-amber-200 hover:border-amber-400',
-            icon: '\u{1F465}',
-          },
-          {
-            id: 'game',
-            title: 'The Decision Game',
-            desc: 'Play through scenarios and learn when silence beats advice.',
-            color: 'bg-red-50 border-red-200 hover:border-red-400',
-            icon: '\u{1F3AE}',
-          },
-          {
-            id: 'deployment',
-            title: 'Deployment Guide',
-            desc: 'Walk through the 4-node deployment decision tree for your system.',
-            color: 'bg-teal-50 border-teal-200 hover:border-teal-400',
-            icon: '\u{1F680}',
-          },
-          {
-            id: 'governance',
-            title: 'Governance Frontier',
-            desc: 'Explore the trade-off between signal caps and lifecycle value.',
-            color: 'bg-indigo-50 border-indigo-200 hover:border-indigo-400',
-            icon: '⚖️',
           },
         ].map(mod => (
           <button
@@ -124,9 +118,8 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             onClick={() => onNavigate(mod.id)}
             className={`text-left rounded-xl border-2 p-5 transition-all ${mod.color} cursor-pointer`}
           >
-            <div className="text-2xl mb-2">{mod.icon}</div>
-            <h3 className="font-semibold text-gray-900 mb-1">{mod.title}</h3>
-            <p className="text-sm text-gray-600">{mod.desc}</p>
+            <h3 className="font-semibold text-gray-900 mb-2">{mod.title}</h3>
+            <p className="text-sm text-gray-600 leading-relaxed">{mod.desc}</p>
           </button>
         ))}
       </div>
