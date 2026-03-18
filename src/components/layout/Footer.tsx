@@ -41,7 +41,7 @@ export function Footer() {
                 <span className="text-gray-400">Paper PDF (coming soon)</span>
               </li>
               <li>
-                <a href="#" className="text-primary-600 hover:underline">
+                <a href="https://github.com/StefanosPoulidis/signal-design-tool" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
                   GitHub Repository
                 </a>
               </li>
